@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>XHRupload-GoogleCamp</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<u>本代码仅供学习交流</u>
+<h3>关键过程：</h3>
+<p>1、创建FormData，放入待上传文件</p>
+<p>2、通过xhr操作将FormData发送到服务器，实现文件上传</p>
+<p>3、绑定progress、load、error等事件监听传输过程并在页面显示动态交互信息</p>
+
+<div>
+    <p id="upfile">附件： <input type="file" id="myfile" style="display: inline"></p>
+    <p id="upbtn">
+        <input class="btn btn-primary btn-sm" style="padding-left:50px;padding-right: 50px;" type="button" value="异步上传" onclick="upload();">
+        <span id="uptxt" style="display: none">正在上传...</span>
+        <span id="upprog"></span>
+        <button id="stopbtn" style="display:none;">停止上传</button>
+    </p>
+</div>
+
+<div id="flist" style="border:1px dotted darkgray;"></div>
+
+<script>
+    var flist = document.getElementById('flist');
+
+    function upload() {
+        // 1.准备FormData
+        var fd = new FormData();
+        fd.append("file", document.getElementById("myfile").files[0]);
+
+        var upprog = document.getElementById('upprog');
+        var stopbtn = document.getElementById('stopbtn');
+        var uptxt = document.getElementById('uptxt');
+
+        // 创建xhr对象
+        var xhr = new XMLHttpRequest();
+        // 监听状态，实时响应
+        // xhr 和 xhr.upload 都有progress事件，xhr.progress是下载进度，xhr.upload.progress是上传进度
+        xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+                var percent = Math.round(event.loaded * 100 / event.total);
+                console.log('%d%', percent);
+                upprog.innerHTML=percent;
+            }
+        };
+
+        // 传输开始事件
+        xhr.onloadstart = function(event) {
+            console.log('load start');
+            upprog.innerHTML='开始上传';
+
+            stopbtn.addEventListener('click', function() {
+                xhr.abort();
+            });
+
+            loading(true);
+        };
+
+        // ajax过程成功完成事件
+        xhr.onload = function(event) {
+            console.log('load success');
+            upprog.innerHTML='上传成功';
+
+            console.log(xhr.responseText);
+            var ret = JSON.parse(xhr.responseText);
+            addToFlist(ret.file.originalname);
+        };
+
+        // ajax过程发生错误事件
+        xhr.onerror = function(event) {
+            console.log('error');
+            upprog.innerHTML='发生错误';
+        };
+
+        // ajax被取消
+        xhr.onabort = function(event) {
+            console.log('abort');
+            upprog.innerHTML='操作被取消';
+        };
+
+        // loadend传输结束，不管成功失败都会被触发
+        xhr.onloadend = function (event) {
+            console.log('load end');
+        };
+
+        // 发起ajax请求传送数据
+        xhr.open('POST', 'https://back.10000h.top/sendFile', true);
+        xhr.send(fd);
+    }
+
+    function addToFlist(fname) {
+        var tempdiv = document.createElement('div');
+        var temp = ["<p id='" + fname + "'>",
+            fname,
+            "<button onclick='delFile(\"" + fname + "\");'>删除</button>",
+            "</p>"
+        ];
+        console.log(temp.join(""));
+        tempdiv.innerHTML = temp.join("");
+        flist.appendChild(tempdiv);
+    }
+
+    function delFile(fname) {
+        console.log('to delete file: ' + fname);
+        // TODO
+    }
+
+    function loading(showloading) {
+
+    }
+</script>
+</body>
+</html>
